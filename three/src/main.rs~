@@ -1,0 +1,81 @@
+use aoc_utils::read_lines;
+
+const WIDTH: usize = 12;
+
+fn main() {
+    one();
+    // two();
+}
+
+fn one() {
+    let mut numbers: Vec<i16> = Vec::new();
+    if let Ok(rows) = read_lines("./input") {
+        for row in rows {
+            if let Ok(line) = row {
+                let mut n = i16::from_str_radix(&line[..], 2).unwrap();
+                numbers.push(n);
+                println!("{}", n);
+            }
+        }
+    }
+}
+
+fn one_2() -> (i16, i16, i16) {
+    // How does this work haha
+    if let Ok(rows) = read_lines("./input") {
+        let mut bit_counter: [i16; 12] = [0; 12];
+        let mut n_rows = 0;
+        for row in rows {
+            n_rows += 1;
+            if let Ok(line) = row {
+                let mut n = i16::from_str_radix(&line[..], 2).unwrap();
+                let mut byte_pos: usize = 0;
+                while byte_pos < bit_counter.len() {
+                    bit_counter[byte_pos] += n & 1;
+                    n = n >> 1;
+                    byte_pos += 1;
+                }
+            }
+        }
+        let mut gamma_rate = 0;
+        let mut epsilon_rate = 0;
+        for byte_pos in 0..bit_counter.len() {
+            let mut gamma_exponent = 1;
+            if bit_counter[byte_pos] <= n_rows / 2 {
+                gamma_exponent = 0;
+            }
+            gamma_rate |= gamma_exponent << byte_pos;
+            epsilon_rate |= (1 - gamma_exponent) << byte_pos;
+        }
+        let power_consumption = gamma_rate * epsilon_rate;
+        // println!("{}", power_consumption);
+        return (gamma_rate, epsilon_rate, n_rows);
+    }
+    (0, 0, 0)
+}
+
+/*
+fn two() {
+    let (most_common, least_common, n_rows) = one_2();
+    // How does this work haha
+    if let Ok(rows) = read_lines("./input") {
+        let oxygen = 0;
+        let co2 = 0;
+
+        let oxygen_mask = (1 << (n_rows)) - 1;
+        let co2_mask = (1 << (n_rows)) - 1;
+
+        let width = 16 - std::cmp::min(most_common.leading_zeros(), least_common.leading_zeros());
+
+        for byte_pos in 0..width {
+            for row in rows {
+                let input_bit = ()
+            }
+        }
+
+        println!("{}", oxygen_mask);
+        let life_support = oxygen * co2;
+        println!("{}", life_support);
+    }
+}
+*/
