@@ -1,12 +1,23 @@
 use aoc_utils::read_lines;
 
 fn main() {
-    let input = get_input("test_input");
+    let mut input = get_input("input");
 
-    println!("{:?}", input);
-    let next = step(input);
-    println!("{:?}", next);
-    println!("{:?}", step(next));
+    let n_octopi = (input.len() * input[0].len()) as u32;
+
+    let mut total_flashes = 0;
+    for iter in 0..1000 {
+        let (next, flashes) = step(input);
+        total_flashes += flashes;
+        input = next;
+        if iter == 99 {
+            println!("at iteration 100 there has been {} flashes", total_flashes);
+        }
+        if flashes == n_octopi {
+            println!("at iteration {} all octopi flashed at once", iter + 1);
+            break
+        }
+    }
 }
 
 fn get_input(f: &str) -> Vec<Vec<u32>> {
@@ -24,7 +35,7 @@ fn get_input(f: &str) -> Vec<Vec<u32>> {
     out
 }
 
-fn step(oct: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
+fn step(oct: Vec<Vec<u32>>) -> (Vec<Vec<u32>>, u32) {
     let mut new_out = Vec::with_capacity(oct.len());
     for i in 0..oct.len() {
         let row = &oct[i];
@@ -35,6 +46,7 @@ fn step(oct: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
         new_out.push(new_row);
     }
 
+    let mut total_flashes = 0;
     loop {
         let mut n_flashes = 0;
         // Calculate flashes
@@ -74,10 +86,11 @@ fn step(oct: Vec<Vec<u32>>) -> Vec<Vec<u32>> {
                 }
             }
         }
+        total_flashes += n_flashes;
         if n_flashes == 0 {
             break;
         }
     }
 
-    new_out
+    (new_out, total_flashes)
 }
