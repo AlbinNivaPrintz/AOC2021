@@ -31,7 +31,7 @@ impl Cave {
 }
 
 fn main() {
-    let mut g = get_input("input");
+    let mut g = get_input("small_input");
     let start = "start".to_owned();
     let mut paths = vec![start.clone()];
     let paths = get_paths(start, &mut g, &mut paths);
