@@ -1,41 +1,32 @@
 use aoc_utils::read_lines;
 use std::collections::HashMap;
-
-#[derive(Debug)]
-enum CaveType {
-    Small,
-    Big,
-}
-
-impl From<char> for CaveType {
-    fn from(c: char) -> CaveType {
-        if c.is_lowercase() {
-            CaveType::Small
-        } else {
-            CaveType::Big
-        }
-    }
-}
+use std::collections::HashSet;
 
 #[derive(Debug)]
 struct Cave {
-    pub cave_type: CaveType,
     pub connections: Vec<String>,
-    pub visited: bool,
 }
 
 impl Cave {
+    fn new() -> Cave {
+        Cave {
+            connections: Vec::new(),
+        }
+    }
     fn add_connection(&mut self, connection: String) {
         self.connections.push(connection);
     }
 }
 
 fn main() {
-    let mut g = get_input("small_input");
-    let start = "start".to_owned();
-    let mut paths = vec![start.clone()];
-    let paths = get_paths(start, &mut g, &mut paths);
+    let mut g = get_input("input");
+    let paths = get_paths(&mut g);
     println!("there are {} paths", paths.len());
+    // let mut str_paths: Vec<String> = paths.iter().map(|x| x.join(",")).collect();
+    // str_paths.sort();
+    // for p in str_paths {
+    //     println!("{}", p);
+    // }
 }
 
 fn get_input(f: &str) -> HashMap<String, Cave> {
@@ -48,69 +39,74 @@ fn get_input(f: &str) -> HashMap<String, Cave> {
             let from = splat.next().unwrap().to_owned();
             let to = splat.next().unwrap().to_owned();
 
-            let from_type: CaveType = from.chars().next().unwrap().into();
-            let to_type: CaveType = to.chars().next().unwrap().into();
-
-            let from_entry = out.entry(from.clone()).or_insert_with(|| Cave {
-                cave_type: from_type,
-                connections: Vec::new(),
-                visited: false,
-            });
+            let from_entry = out.entry(from.clone()).or_insert_with(|| Cave::new());
             from_entry.add_connection(to.clone());
 
-            let to_entry = out.entry(to).or_insert_with(|| Cave {
-                cave_type: to_type,
-                connections: Vec::new(),
-                visited: false,
-            });
+            let to_entry = out.entry(to.clone()).or_insert_with(|| Cave::new());
             to_entry.add_connection(from)
         }
     }
     out
 }
 
-fn get_paths(
-    start_at: String,
-    graph: &mut HashMap<String, Cave>,
-    current_path: &mut Vec<String>,
-) -> Vec<Vec<String>> {
-    let mut generated_paths = Vec::new();
-    let mut start = graph.get_mut(&start_at).unwrap();
-    start.visited = true;
+fn get_paths(graph: &mut HashMap<String, Cave>) -> Vec<Vec<String>> {
+    let mut paths = vec![vec!["start".to_owned()]];
 
-    let neighbours = graph.get(&start_at).unwrap().connections.clone();
-    for neigh_name in neighbours {
-        // If this is the end, just add it to the generated paths and continue
-        if neigh_name == "end" {
-            let mut path_copy = current_path.clone();
-            path_copy.push(neigh_name.clone());
-            generated_paths.push(path_copy);
-            continue;
+    loop {
+        let mut all_ended = true;
+        let mut new_paths = Vec::new();
+
+        for path in paths {
+            let leaf_key = path.last().unwrap();
+
+            if leaf_key == "end" {
+                new_paths.push(path.clone());
+                continue;
+            }
+
+            let leaf = graph.get(leaf_key).unwrap();
+
+            for neigh in &leaf.connections {
+                if !can_visit(neigh, &path) {
+                    continue;
+                }
+
+                all_ended = false;
+
+                let mut tmp = path.clone();
+                tmp.push(neigh.clone());
+                new_paths.push(tmp);
+            }
         }
 
-        let neigh = graph.get_mut(&neigh_name).unwrap();
-        if matches!(neigh.cave_type, CaveType::Small) && neigh.visited {
-            // This has already been visited!!
-            continue;
+        paths = new_paths;
+        if all_ended {
+            break;
         }
-
-        // This is not the end, and not an already visited small cave
-        // So visit it!
-        neigh.visited = true;
-
-        current_path.push(neigh_name.clone());
-        let derived_paths = get_paths(neigh_name.clone(), graph, current_path);
-        for derived_path in derived_paths {
-            generated_paths.push(derived_path);
-        }
-
-        {
-            // neigh.visited = false;
-        }
-        current_path.pop();
     }
 
-    let mut start = graph.get_mut(&start_at).unwrap();
-    start.visited = false;
-    generated_paths
+    paths
+}
+
+fn can_visit(s: &String, path: &Vec<String>) -> bool {
+    // Check if can add leaf
+    // This is stupid because we count the same thing multiple times
+    if s == "start" {
+        return false;
+    }
+
+    let mut used_twice = false;
+    let mut hs = HashSet::new();
+    for el in path {
+        let not_had_already = hs.insert(el);
+        if !not_had_already && el.chars().last().unwrap().is_lowercase() {
+            used_twice = true
+        }
+    }
+
+    if s.chars().last().unwrap().is_lowercase() {
+        !used_twice || !hs.get(s).is_some()
+    } else {
+        true
+    }
 }
